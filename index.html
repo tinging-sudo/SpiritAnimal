@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>动物塑测试</title>
+    <!-- 引入 ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #ffffff;
+            --dot-color: #fce8e8;
+            --text-dark: #333333;
+            --text-gray: #666666;
+            --purple-main: #8875c9;
+            --purple-bg: #f4f1fb;
+            --border-yellow: #f2c97d;
+            --border-green: #a8d5ba;
+            --border-pink: #f5a8a8;
+            --border-purple: #9b88cf;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            /* 白底粉色波点背景 */
+            background-color: var(--bg-main);
+            background-image: radial-gradient(var(--dot-color) 15%, transparent 16%);
+            background-size: 30px 30px;
+            color: var(--text-dark); 
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh;
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 480px; 
+            min-height: 100vh; 
+            position: relative; 
+            overflow-x: hidden; 
+        }
+        
+        /* 独立页面控制 */
+        .page { 
+            display: none; 
+            padding: 20px; 
+            min-height: 100vh; 
+            animation: fadeIn 0.4s ease; 
+            width: 100%;
+        }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 按钮 */
+        .btn { 
+            display: block; width: 100%; padding: 16px; border-radius: 30px; 
+            background: var(--text-dark); color: #fff; 
+            font-size: 16px; font-weight: bold; text-align: center; 
+            border: none; cursor: pointer; transition: all 0.3s; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-outline { background: #fff; color: var(--text-dark); border: 2px solid #eee; box-shadow: none;}
+
+        /* ================= 1. 开始页面 ================= */
+        #startPage { display: none; flex-direction: column; align-items: center; padding-top: 40px; }
+        #startPage.active { display: flex; }
+        
+        .clock-icon {
+            position: absolute; top: 20px; right: 20px;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: #fff; border: 1px solid #eee;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            font-size: 20px;
+        }
+
+        .main-title { font-size: 36px; font-weight: 900; margin: 20px 0 10px; letter-spacing: 2px;}
+        .sub-title { font-size: 16px; color: var(--text-gray); margin-bottom: 30px; letter-spacing: 1px;}
+        
+        .info-tags { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
+        .tag { background: #fff; color: #666; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+        
+        .animal-grid { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; 
+            margin-bottom: 40px; width: 100%; padding: 0 10px;
+        }
+        .animal-box {
+            background: #fff; border-radius: 20px; aspect-ratio: 1;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        /* ================= 2. 答题页面 ================= */
+        #testPage { padding-top: 30px;}
+        .progress-container { width: 100%; height: 6px; background: #fff; border-radius: 3px; margin-bottom: 30px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);}
+        .progress-bar { width: 0%; height: 100%; background: var(--purple-main); border-radius: 3px; transition: width 0.3s ease; }
+        
+        .q-num { font-size: 14px; color: var(--purple-main); margin-bottom: 12px; font-weight: bold; letter-spacing: 1px;}
+        .q-text { font-size: 22px; font-weight: 900; margin-bottom: 25px; line-height: 1.5; background: #fff; padding: 24px; border-radius: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.04);}
+        
+        .option { 
+            background: #fff; border: 2px solid transparent; 
+            padding: 20px; border-radius: 16px; margin-bottom: 15px; 
+            font-size: 16px; cursor: pointer; transition: all 0.2s; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); line-height: 1.5; color: #444;
+        }
+        .option.selected { border-color: var(--purple-main); background: var(--purple-bg); font-weight: bold; color: var(--purple-main);}
+        
+        .action-btns { display: flex; gap: 15px; margin-top: 30px; padding-bottom: 30px;}
+
+        /* ================= 3. 结果页面 ================= */
+        .header-center { text-align: center; margin-bottom: 25px; padding-top: 20px;}
+        .header-sub { font-size: 15px; color: var(--text-gray); margin-bottom: 10px;}
+        .big-emoji { font-size: 80px; line-height: 1; margin-bottom: 10px; display: inline-block;}
+        .animal-name { font-size: 40px; font-weight: 900; color: var(--purple-main); letter-spacing: 2px; line-height: 1.2;}
+        .badge { 
+            display: inline-block; background: #e8e3f7; color: var(--purple-main); 
+            padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; margin-top: 15px;
+        }
+
+        .quote-card {
+            background: var(--purple-bg);
+            padding: 20px 24px;
+            border-radius: 0 20px 20px 0;
+            border-left: 6px solid var(--purple-main);
+            font-size: 18px;
+            color: var(--purple-main);
+            font-weight: bold;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-style: italic;
+            box-shadow: 0 4px 15px rgba(136, 117, 201, 0.1);
+        }
+
+        .result-card { 
+            background: #fff; 
+            padding: 24px; 
+            border-radius: 20px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+            line-height: 1.7;
+        }
+        .card-border-yellow { border-left: 6px solid var(--border-yellow); }
+        .card-border-green { border-left: 6px solid var(--border-green); }
+        .card-border-pink { border-left: 6px solid var(--border-pink); }
+        .card-border-purple { border-left: 6px solid var(--border-purple); }
+
+        .card-head { font-size: 18px; font-weight: 900; margin-bottom: 12px; color: #222;}
+        .card-tag { font-size: 14px; color: #666; font-weight: bold; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee;}
+        .card-text { font-size: 15px; color: #444; line-height: 1.8; text-align: justify;}
+
+        /* 雷达图 (绝对居中、大幅放大) */
+        .radar-wrap { padding: 10px 0; display: flex; justify-content: center; align-items: center;}
+        #radarChart { width: 100%; height: 340px; margin: 0 auto; }
+
+        /* 维度进度条 */
+        .dim-card { 
+            background: #fff; padding: 20px 24px; border-radius: 20px; 
+            margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            border-left: 6px solid var(--purple-main);
+        }
+        .dim-title { font-size: 20px; font-weight: 900; color: var(--purple-main); margin-bottom: 10px;}
+        .dim-score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px;}
+        .dim-score { font-size: 32px; font-weight: 900; color: #333;}
+        .dim-score-total { font-size: 16px; color: #999; font-weight: bold;}
+        .dim-level { background: #f4f1fb; color: var(--purple-main); padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: bold;}
+        
+        .bar-bg { width: 100%; height: 10px; background: #f0f0f0; border-radius: 5px; overflow: hidden; margin-bottom: 15px;}
+        .bar-fill { height: 100%; background: var(--purple-main); border-radius: 5px; transition: width 1s ease;}
+        .dim-desc { font-size: 15px; color: #555; line-height: 1.6;}
+
+        /* 历史记录弹窗 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 999;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            width: 85%; max-width: 400px; background: #fff; border-radius: 20px; padding: 20px;
+            max-height: 70vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;}
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
+        .history-item { background: #fafafa; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;}
+        .history-animal { font-weight: bold; font-size: 16px;}
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- 1. 开始页面 -->
+    <div id="startPage" class="page active">
+        <div class="clock-icon" onclick="toggleHistoryModal()">🕒</div>
+        
+        <div class="main-title">动物塑测试</div>
+        <div class="sub-title">你的内在，像哪种小动物？</div>
+        
+        <div class="info-tags">
+            <span class="tag">30道题</span>
+            <span class="tag">约5分钟</span>
+            <span class="tag">20种灵魂形态</span>
+        </div>
+        
+        <div class="animal-grid" id="animalGrid"></div>
+
+        <button class="btn" onclick="startTest()" style="margin-bottom: 30px;">开始测试</button>
+    </div>
+
+    <!-- 2. 答题页面 -->
+    <div id="testPage" class="page">
+        <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="q-num" id="qNum">第 1 / 30 题</div>
+        <div class="q-text" id="qText">题目加载中...</div>
+        <div id="optionsList"></div>
+        
+        <div class="action-btns">
+            <button class="btn btn-outline" onclick="prevQuestion()">上一题</button>
+            <button class="btn" onclick="nextQuestion()">下一题</button>
+        </div>
+    </div>
+
+    <!-- 3. 结果页面 -->
+    <div id="resultPage" class="page">
+        <div class="header-center">
+            <div class="header-sub">你的动物塑是</div>
+            <div class="big-emoji" id="rEmoji">🦊</div>
+            <div class="animal-name" id="rName">狐狸</div>
+            <div class="badge" id="rBadge">你是 TOP 5% 的狐狸塑</div>
+        </div>
+        
+        <div class="quote-card" id="rQuote">“保持神秘，是狐狸最好的保护色。”</div>
+
+        <div class="result-card card-border-yellow">
+            <div class="card-head" id="rTitle">表面狡猾海王 × 内心纯爱战神</div>
+            <div class="card-tag" id="rTag">【属性标签】智商MAX × 偷懒MAX</div>
+            <div class="card-text" id="rDetail">加载中...</div>
+        </div>
+
+        <div class="result-card card-border-green">
+            <div class="card-head">💼 职场生存法则</div>
+            <div class="card-text" id="rWork">加载中...</div>
+        </div>
+        
+        <div class="result-card card-border-pink">
+            <div class="card-head">❤️ 恋爱雷达</div>
+            <div class="card-text" id="rLove">加载中...</div>
+        </div>
+
+        <!-- 雷达图 -->
+        <div class="result-card card-border-purple">
+            <div class="card-head" style="text-align: center; color: var(--purple-main); font-size: 22px; margin-bottom: 0;">性格维度分析</div>
+            <div class="radar-wrap">
+                <div id="radarChart"></div>
+            </div>
+        </div>
+
+        <div id="dimensionList" style="margin-bottom: 30px;"></div>
+
+        <button class="btn" onclick="location.reload()" style="margin-bottom: 30px;">重新测试</button>
+    </div>
+
+    <!-- 历史记录弹窗 -->
+    <div class="modal-overlay" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size: 18px; font-weight: bold;">历史测试档案</h3>
+                <button class="close-btn" onclick="toggleHistoryModal()">×</button>
+            </div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // 为20种动物赋予极其清晰、差异化的雷达图得分 (范围1-6分)
+    // 维度顺序: [能量充电, 社交面具, 应激防御, 情绪内核, 行事逻辑, 隐藏反差]
+    const animalsDB = {
+        "猫": { emoji: "🐱", radar: [6, 2, 5, 4, 3, 6], quote: "“高冷只是保护色，内心其实在疯狂求抱抱。”", title: "表面高冷独立 × 内心极度缺爱", tag: "【属性标签】高边界MAX × 傲娇MAX", desc: "你像猫一样，有着极高的边界感，不喜欢被打扰。表面总是维持着优雅和骄傲，甚至有点傲娇，但在你信任的人面前，你会卸下防备，展露极度粘人的一面。你极度需要私人空间，太黏糊会让你窒息。", work: "表面靠谱好员工，内心只想下班。遇到甩锅，你能优雅且不失礼貌地怼回去。", love: "极度需要私人空间，太黏糊会让你窒息。但一旦认定，就会暗戳戳地吃醋。" },
+        "狗": { emoji: "🐶", radar: [2, 6, 2, 6, 4, 3], quote: "“只要你对我好一点点，我就恨不得把全世界都给你。”", title: "表面热情讨好 × 内心内耗敏感", tag: "【属性标签】低边界MAX × 忠诚度MAX", desc: "你像狗一样，是团队里提供极高情绪价值的开心果。你热情、直球，忠诚度极高，甚至有点讨好型人格。你总是习惯性地照顾别人的感受，但这也让你极其容易受委屈，常常在深夜里因为别人的一句话而内耗。", work: "团队里的老好人，谁找你帮忙都答应，讨好型人格发作。但心里会因为别人的一句话内耗半天。", love: "直球战神，恨不得24小时贴贴。提供极高的情绪价值，极度忠诚，但也容易在感情里受伤。" },
+        "兔子": { emoji: "🐰", radar: [4, 3, 6, 6, 2, 6], quote: "“惹急了，兔子也是会咬人的哦。”", title: "表面软萌易受惊 × 内心暴躁记仇", tag: "【属性标签】敏感MAX × 报复心MAX", desc: "你像兔子一样，外表软萌无害。你极度缺乏安全感，容易脑补出一部虐恋剧，非常需要伴侣极其坚定的偏爱。但别小看你，你的忍痛力极强，而且有一个隐形的记仇小本本，逼急了不仅会咬人，还会疯狂翻旧账。", work: "表面唯唯诺诺，实际心里已经骂了一万遍。逼急了不仅咬人，还会在心里的小本本上疯狂记仇。", love: "极度缺乏安全感，容易脑补出一部虐恋剧。需要伴侣极其坚定的偏爱，一旦受伤很难哄好。" },
+        "猪": { emoji: "🐷", radar: [4, 4, 3, 2, 1, 2], quote: "“能者多劳，但我只想干饭。”", title: "表面随性佛系 × 内心人间清醒", tag: "【属性标签】抗压MAX × 食欲MAX", desc: "你像猪一样，情绪稳定得让人嫉妒。你随性、佛系，看似什么都不争，其实比谁都活得通透。你有着极强的抗压能力，遇到困难吃顿好的就能解决。只要给够你好吃的，一切好商量。", work: "职场摸鱼王者，看似什么都不争，其实比谁都看得清。主打一个能者多劳，但我只想干饭，抗压能力一流。", love: "情绪稳定器，很少无理取闹。只要给够好吃的，一切好商量，是极其佛系的伴侣。" },
+        "仓鼠": { emoji: "🐹", radar: [5, 2, 5, 5, 6, 4], quote: "“看着满满当当的存货，才有安全感。”", title: "表面勤奋秩序 × 内心重度焦虑", tag: "【属性标签】囤积癖MAX × 领地意识MAX", desc: "你像仓鼠一样，是极其靠谱的执行者。你喜欢把一切安排得井井有条，安全感来自于物质的堆积和充足的准备。你有点强迫症，极度讨厌别人动自己的东西，一旦计划被打乱，就会陷入焦虑。", work: "最靠谱的执行者，喜欢把一切安排得井井有条。极度讨厌别人动自己的东西，一乱就会陷入焦虑。", love: "喜欢照顾人，安全感来自物质的堆积。看到喜欢的人就想疯狂投喂，囤满整个冰箱。" },
+        "狐狸": { emoji: "🦊", radar: [5, 6, 4, 5, 6, 6], quote: "“看透一切的智者，其实是个纯爱战神。”", title: "表面狡猾机灵 × 内心纯爱战神", tag: "【属性标签】逃避型MAX × 智商MAX", desc: "你像狐狸一样，是个解决问题的高手，总能找到捷径。你看起来很聪明，甚至有点像海王/海后，遇到麻烦第一反应是逃避。但那只是你的伪装，一旦遇到真正降伏你的人，你会变成极度深情的纯爱战神。", work: "解决问题的高手，总能找到捷径。最讨厌笨人，遇到麻烦事第一反应是逃避，但表面还是能和所有人保持和气。", love: "看透一切的智者，很难真正交心。但一旦遇上真正降伏自己的人，会变成极度深情的纯爱战神。" },
+        "蛇": { emoji: "🐍", radar: [6, 1, 6, 4, 6, 5], quote: "“平时不咬人，但不代表我没毒。”", title: "表面潜伏危险 × 内心渴望温暖", tag: "【属性标签】腹黑MAX × 占有欲MAX", desc: "你像蛇一样，平时话不多，但绝对是个狠角色。你不惹事，但也绝不怕事，最擅长冷处理和蛰伏。你在感情里极度专一且护短，占有欲极强，掌控欲满分，是个危险又迷人的存在。", work: "平时话不多，但绝对是个狠角色。不惹事但绝不怕事，最擅长冷处理，一旦出手就是致命一击。", love: "极度专一且护短，占有欲极强。不喜欢在社交软件上秀恩爱，但现实中掌控欲极强，危险又迷人。" },
+        "狼": { emoji: "🐺", radar: [6, 3, 6, 5, 6, 4], quote: "“如果你懂我，我就为你对抗全世界。”", title: "表面孤傲野性 × 内心渴望群居", tag: "【属性标签】极度忠诚MAX × 慕强MAX", desc: "你像狼一样，目标导向，效率极高。你有点孤傲，讨厌拖后腿的队友，喜欢单打独斗。但如果你遇到了真正合拍的团队或伴侣，你的忠诚度会爆表，护短程度令人发指，会为了你爱的人对抗全世界。", work: "目标导向型，效率极高。讨厌拖后腿的队友，喜欢单打独斗，但也极其珍惜能并肩作战的合拍团队。", love: "极度忠诚，讲究精神契合。如果你懂TA，TA会为你对抗全世界，是极其护短的伴侣。" },
+        "熊": { emoji: "🐻", radar: [5, 3, 4, 3, 5, 3], quote: "“别惹我，我力气很大，而且起床气重。”", title: "表面憨厚力量 × 内心暴躁护食", tag: "【属性标签】冬眠周期MAX × 武力值MAX", desc: "你像熊一样，看起来老实巴交，其实心里门儿清。你做事非常靠谱，给人一种强烈的安全感。但你也有自己的雷区，比如在你睡觉或吃饭的时候惹你，你暴躁起来力量感十足，没人敢惹。", work: "看起来老实巴交，其实心里门儿清。关键时刻非常靠谱，力量感极强，但千万别在TA睡觉或吃饭时惹TA。", love: "非常具有安全感。虽然不够浪漫，但总会用实际行动证明爱你，比如带你吃顿好的，护食但也护你。" },
+        "海豚": { emoji: "🐬", radar: [2, 6, 2, 4, 5, 4], quote: "“无趣的灵魂千篇一律，有趣的我在恶作剧。”", title: "表面活泼交际 × 内心戏弄乐子人", tag: "【属性标签】共情力MAX × 恶作剧MAX", desc: "你像海豚一样，高智商且极其擅长交际，是团队里的润滑剂。你讨厌无聊，总能想出一些新奇的创意，偶尔还会搞点恶作剧戏弄大家。你很懂浪漫，但也容易让人觉得抓不住你。", work: "团队里的润滑剂，情商极高。讨厌无聊和枯燥，总能想出一些新奇的创意，偶尔喜欢恶作剧戏弄同事。", love: "非常懂得制造浪漫，但也容易让人觉得抓不住。需要伴侣能跟上你的节奏，一起玩耍。" },
+        "水母": { emoji: "🪼", radar: [4, 2, 6, 6, 2, 6], quote: "“看着软趴趴，其实全是毒刺。”", title: "表面透明柔弱 × 内心有毒漂浮", tag: "【属性标签】随波逐流MAX × 暗中蛰人MAX", desc: "你像水母一样，看着人畜无害，其实防备心极重。你平时随波逐流，极度敏感，容易内耗。但一旦被惹毛，你的反击会让人措手不及。你是个隐形的狠角色，需要极其细腻的呵护。", work: "看着人畜无害，其实防备心极重。平时随波逐流，一旦被惹毛，反击会让你措手不及，是个隐形的狠角色。", love: "极度敏感，内耗第一名。表面不说，内心已经把你折腾了千百遍。需要极其细腻的呵护，否则会被你的毒刺伤到。" },
+        "企鹅": { emoji: "🐧", radar: [3, 5, 3, 5, 6, 2], quote: "“认死理，是我对这个世界最大的深情。”", title: "表面笨拙抗冻 × 内心极度专一", tag: "【属性标签】排队强迫症MAX × 认死理MAX", desc: "你像企鹅一样，遵守规则，团队意识极强。你做事按部就班，虽然不够灵活，但在自己的领域里非常执着可靠。你对待感情极度专一，认死理，一旦认定一个人，就会一直走下去，绝不动摇。", work: "遵守规则，团队意识极强。虽然不够灵活，但在自己的领域里非常执着可靠，有着极强的抗压和抗冻能力。", love: "认死理，忠诚度极高。一旦认定一个人，就会一直走下去，绝不动摇，是个极其专一的伴侣。" },
+        "猫头鹰": { emoji: "🦉", radar: [6, 1, 4, 5, 6, 5], quote: "“白天是清澈的愚蠢，深夜是智慧的神。”", title: "表面智慧深思 × 内心古怪夜行", tag: "【属性标签】夜间清醒MAX × 洞察力MAX", desc: "你像猫头鹰一样，是个夜间脑暴达人。你逻辑严密，洞察力强，看起来很聪明，但偶尔也会犯点小迷糊，展现出清澈愚蠢的一面。你非常慢热，遇到喜欢的人反而会疯狂分析。", work: "夜间脑暴达人，逻辑严密，洞察力强。虽然看起来什么都知道，但偶尔也会犯点小迷糊，是个古怪的智者。", love: "非常慢热，遇到喜欢的人反而会疯狂分析。需要伴侣有极大的耐心去打开你的心，接受你的古怪。" },
+        "天鹅": { emoji: "🦢", radar: [5, 4, 6, 4, 6, 6], quote: "“哪怕内心崩溃，我也要保持优雅地怼你。”", title: "表面优雅高傲 × 内心暴躁洁癖", tag: "【属性标签】战斗力MAX × 死鸭子嘴硬MAX", desc: "你像天鹅一样，凡事追求完美，有洁癖，极度讨厌邋遢。你表面优雅高贵，但其实骨子里是个暴躁老铁。一旦被惹毛，战斗力爆表。哪怕再喜欢一个人，你也绝不先低头，死鸭子嘴硬第一名。", work: "凡事追求完美，极度讨厌邋遢的人和事。即使内心已经崩溃，表面也要保持体面和优雅，惹急了也会咬人。", love: "哪怕再喜欢，也绝对不先低头。死鸭子嘴硬，心里极度渴望被偏爱，嘴上却说着无所谓。" },
+        "乌鸦": { emoji: "🐦‍⬛", radar: [5, 4, 4, 5, 6, 5], quote: "“别把聪明不当回事，我可是会记仇的。”", title: "表面厄运恶作剧 × 内心聪明护短", tag: "【属性标签】收集癖MAX × 记仇MAX", desc: "你像乌鸦一样，不按常理出牌，总能找到别人发现不了的机会。你有点收集癖，喜欢收集各种信息。你聪明绝顶，但也非常记仇，而且极其护短，一旦有人欺负你在乎的人，你会用恶作剧折腾死对方。", work: "不按常理出牌，总能找到别人发现不了的机会。喜欢收集各种信息，偶尔搞点恶作剧，是团队里的黑马。", love: "看似不着调，其实很专一且护短。一旦喜欢上，就会把对方当成自己最珍贵的宝藏，绝不允许别人欺负。" },
+        "蝴蝶": { emoji: "🦋", radar: [3, 5, 3, 6, 3, 4], quote: "“不要试图困住我，我只属于我自己。”", title: "表面花心变装 × 内心渴望自由", tag: "【属性标签】向往自由MAX × 极度社恐MAX", desc: "你像蝴蝶一样，心思跳跃，创意无限。你极度渴望新鲜感和自由，讨厌无聊的重复工作。如果一段关系让你觉得无趣或受限，你会毫不犹豫地飞走，但其实你内心很怕受伤害，渴望真正的自由。", work: "心思跳跃，创意无限。讨厌无聊的重复工作，极度渴望新鲜感，是个百变的职场精灵。", love: "极度需要新鲜感和自由，如果对方让你感到无聊或受限，你就会飞走。其实内心很怕受伤害，渴望真正的自由。" },
+        "树懒": { emoji: "🦥", radar: [5, 2, 1, 2, 1, 2], quote: "“急什么？地球又不会爆炸。”", title: "表面极慢懒散 × 内心重度拖延", tag: "【属性标签】反射弧MAX × 省电模式MAX", desc: "你像树懒一样，有着自己独有的慢节奏。能坐着绝不站着，不到最后一刻绝对不干。你不是不会，只是纯粹懒得动。你不喜欢剧烈的冲突，随遇而安，最适合你的伴侣是能包容你 0.5 倍速生活的人。", work: "能坐着绝不站着，不到最后一刻绝对不干。其实不是不会，就是纯粹懒得动，有着自己独有的慢节奏。", love: "超级佛系，随遇而安。不喜欢剧烈的冲突，最适合你的伴侣是能包容你慢节奏、不急不躁的人。" },
+        "刺猬": { emoji: "🦔", radar: [5, 2, 6, 6, 3, 6], quote: "“只要你不碰我，我其实很温柔。”", title: "表面防备竖刺 × 内心柔软应激", tag: "【属性标签】防御力MAX × 敏感度MAX", desc: "你像刺猬一样，防御心极强，最怕被批评。一旦遇到危险或应激，你的第一反应就是竖起全身的刺，把人推开。但这只是为了保护你极其柔软的内心。你需要一个非常有耐心的人，慢慢抚平你的刺。", work: "防御心极强，最怕被批评。一旦遇到危险或应激，第一反应就是竖起全身的刺，其实内心极其柔软。", love: "极其敏感多疑，容易把小事放大。需要伴侣有极大的耐心，慢慢软化你的刺，给你足够的安全感。" },
+        "考拉": { emoji: "🐨", radar: [6, 2, 2, 5, 4, 4], quote: "“我只想挂在你身上，做你的专属挂件。”", title: "表面嗜睡呆萌 × 内心暴躁认主", tag: "【属性标签】睡眠时长MAX × 挂件MAX", desc: "你像考拉一样，大部分时间都在省电模式。你安静、顺从，但极其讨厌改变。一旦习惯了某种流程，就不想再被打扰。在感情里，你极其粘人，恨不得长在伴侣身上，只要你认定了一个人，就绝对不会背叛。", work: "安静、顺从，但极其讨厌改变。一旦习惯了某种流程，就不想再被打扰，大部分时间都在省电模式。", love: "极其粘人，恨不得长在伴侣身上当挂件。缺乏安全感，但只要认定你，就绝对不会背叛，偶尔会暴躁吃醋。" },
+        "小鹿": { emoji: "🦌", radar: [5, 3, 6, 5, 4, 4], quote: "“一点风吹草动，我就会退回森林。”", title: "表面警惕胆小 × 内心温婉清澈", tag: "【属性标签】警觉性MAX × 易受惊MAX", desc: "你像小鹿一样，细心敏感，能察觉到别人注意不到的细节。你极度容易紧张，需要鼓励和肯定。在感情里，你很容易患得患失，一点点风吹草动都会让你退缩，你渴望被极其温柔地对待。", work: "细心且敏感，能察觉到别人注意不到的细节。但极度容易紧张，需要鼓励和肯定，是个清澈的打工人。", love: "在感情里很容易患得患失。需要被极其温柔地对待，一点点风吹草动都会让你退缩，但内心极其温婉。" }
+    };
+
+    // 30道题库
+    const questions = [
+        { q: "忙碌了一周，周五晚上你的理想状态是：", options: [
+            { text: "找个角落瘫着，锁上门，谁发消息都不想回。", animal: "猫" },
+            { text: "约上朋友去吃顿大餐，热情地和每个人打招呼。", animal: "狗" },
+            { text: "彻底放弃思考，在床上躺平刷手机，一动不动。", animal: "猪" },
+            { text: "能躺着绝不坐着，以0.5倍速度度过这一晚。", animal: "树懒" }
+        ]},
+        { q: "如果给你一个完全不用社交的周末，你会：", options: [
+            { text: "窝在沙发里抱着抱枕，沉浸在自己的小世界中。", animal: "考拉" },
+            { text: "一边收拾房间，一边把冰箱塞满，看着满满当当就很安心。", animal: "仓鼠" },
+            { text: "收拾打扮一下，就算一个人在家也要保持精致。", animal: "天鹅" },
+            { text: "白天昏睡，一到深夜大脑就极度活跃，灵感爆发。", animal: "猫头鹰" }
+        ]},
+        { q: "你的房间/办公桌平时是什么状态？", options: [
+            { text: "东西超多，看似杂乱但乱中有序，闭着眼都能摸到。", animal: "乌鸦" },
+            { text: "极简风，东西很少，主要是懒得去整理。", animal: "蛇" },
+            { text: "干净整洁，极其有条理，一旦乱了我会抓狂。", animal: "企鹅" },
+            { text: "各种囤积物，零食和日用品塞得满满的，有备无患。", animal: "熊" }
+        ]},
+        { q: "面对一项下周才交的任务，你的真实进度是：", options: [
+            { text: "立刻列好计划，目标明确地按部就班推进。", animal: "狼" },
+            { text: "先玩个痛快，不到最后一刻绝对不动手。", animal: "蝴蝶" },
+            { text: "时不时做一点，但很容易被新鲜事物吸引走神。", animal: "狐狸" },
+            { text: "极端拖延，焦虑到死线前一晚才爆发赶工。", animal: "水母" }
+        ]},
+        { q: "当你感到极度疲惫时，你的防御机制是：", options: [
+            { text: "脾气变得极其暴躁，一点就着，浑身带刺。", animal: "刺猬" },
+            { text: "安静地切断所有联系，长时间不理人。", animal: "兔子" },
+            { text: "去找朋友玩耍，靠人际互动来给自己充电。", animal: "海豚" },
+            { text: "疯狂进食，用美食慰藉自己。", animal: "小鹿" }
+        ]},
+        { q: "在一个全是陌生人的聚会上，你通常会：", options: [
+            { text: "躲在角落暗中观察，等别人主动来搭话。", animal: "猫" },
+            { text: "主动破冰，迅速融入，成为气氛担当。", animal: "狗" },
+            { text: "随时观察现场氛围，调整言行，和谁都能聊两句。", animal: "猪" },
+            { text: "极其紧张，局促不安，害怕被注意，只想溜走。", animal: "树懒" }
+        ]},
+        { q: "朋友找你倾诉烦恼，你的第一反应是：", options: [
+            { text: "静静听着，偶尔给点建议，理智且靠谱。", animal: "考拉" },
+            { text: "跟着一起义愤填膺，疯狂给抱抱和情绪价值。", animal: "仓鼠" },
+            { text: "帮TA分析利弊，甚至出谋划策教TA怎么报复。", animal: "天鹅" },
+            { text: "给予极致包容，像大海一样接纳TA的所有负能量。", animal: "猫头鹰" }
+        ]},
+        { q: "如果有人找你借一笔钱，你不想借，你会：", options: [
+            { text: "直接说“不行”，拒绝得干脆利落。", animal: "乌鸦" },
+            { text: "编个看似合理的借口，保全双方体面。", animal: "蛇" },
+            { text: "不好意思拒绝，犹犹豫豫最后委屈自己借了。", animal: "企鹅" },
+            { text: "默默远离这个人，冷处理，假装没看见消息。", animal: "熊" }
+        ]},
+        { q: "遇到喜欢的人，你的真实反应是：", options: [
+            { text: "直球出击，热情似火，有什么说什么。", animal: "狼" },
+            { text: "保持高冷，暗中试探和拉扯，绝不先低头。", animal: "蝴蝶" },
+            { text: "表面不动声色，内心已经演完了一部连续剧。", animal: "狐狸" },
+            { text: "恨不得24小时挂在你身上，极度粘人。", animal: "水母" }
+        ]},
+        { q: "你对待规则的态度是：", options: [
+            { text: "尊重规则，喜欢在规则内把事情做到极致。", animal: "刺猬" },
+            { text: "规则就是用来打破的，总能找到漏洞。", animal: "兔子" },
+            { text: "看心情，开心了就遵守，不开心就捣乱。", animal: "海豚" },
+            { text: "随大流，只要不惹麻烦，我随便怎么都行。", animal: "小鹿" }
+        ]},
+        { q: "当有人当面用言语冒犯你，你的第一反应是：", options: [
+            { text: "当场发飙怼回去，甚至想动手。", animal: "猫" },
+            { text: "立刻竖起浑身的刺，开启防御模式。", animal: "狗" },
+            { text: "表面愣住，内心极度受伤，甚至想哭。", animal: "猪" },
+            { text: "表面微笑，内心已经默默记仇。", animal: "树懒" }
+        ]},
+        { q: "如果发现有人在你背后说坏话，你会：", options: [
+            { text: "直接冲过去当面质问，把话说清楚。", animal: "考拉" },
+            { text: "翻个白眼，觉得对方是个傻子，懒得理。", animal: "仓鼠" },
+            { text: "暗中收集证据，关键时刻狠狠反击。", animal: "天鹅" },
+            { text: "躲在被窝里难过，陷入内耗，怀疑是不是自己不好。", animal: "猫头鹰" }
+        ]},
+        { q: "和别人发生剧烈争吵后，你会：", options: [
+            { text: "吵完就完了，只要对方给台阶，就能和好。", animal: "乌鸦" },
+            { text: "表面不计较，但这件事心里会记很久很久。", animal: "蛇" },
+            { text: "哭着跑开，觉得全世界都在欺负自己。", animal: "企鹅" },
+            { text: "必须让对方彻底认错，否则没完没了。", animal: "熊" }
+        ]},
+        { q: "当你的计划被突发情况彻底打乱时，你会：", options: [
+            { text: "迅速掌控局面，马上重新规划。", animal: "狼" },
+            { text: "表面稳如老狗，内心其实慌乱，强撑着。", animal: "蝴蝶" },
+            { text: "极度烦躁，第一反应是先逃避一下再说。", animal: "狐狸" },
+            { text: "觉得无所谓，干脆摆烂。", animal: "水母" }
+        ]},
+        { q: "遇到委屈时，你最习惯怎么发泄？", options: [
+            { text: "化悲愤为力量，去运动或疯狂搞事业。", animal: "刺猬" },
+            { text: "找朋友疯狂吐槽，大吐苦水。", animal: "兔子" },
+            { text: "假装什么都没发生，其实已经快碎了。", animal: "海豚" },
+            { text: "把所有难过都憋在心里，自己慢慢消化。", animal: "小鹿" }
+        ]},
+        { q: "看一部感人的电影，你的反应通常是：", options: [
+            { text: "深受触动，眼泪在打转，久久不能平复。", animal: "猫" },
+            { text: "跟着主角大哭大笑，情绪完全外放。", animal: "狗" },
+            { text: "表面平静甚至吐槽剧情，内心其实已经破防。", animal: "猪" },
+            { text: "分析逻辑和拍摄手法，觉得没啥好哭的。", animal: "树懒" }
+        ]},
+        { q: "你脑子平时最爱想些什么？", options: [
+            { text: "各种严谨的计划、未解之谜和底层逻辑。", animal: "考拉" },
+            { text: "没用但好玩的冷知识，或者脑洞大开的恶作剧。", animal: "仓鼠" },
+            { text: "今天吃啥、去哪玩、怎么让自己开心。", animal: "天鹅" },
+            { text: "警惕周围的风险，以及如何保护自己。", animal: "猫头鹰" }
+        ]},
+        { q: "在深夜突然emo的时候，你会：", options: [
+            { text: "发一条仅自己可见的伤感朋友圈。", animal: "乌鸦" },
+            { text: "给好朋友发大段语音，或者打电话倾诉。", animal: "蛇" },
+            { text: "躲在被子里默默流泪，第二天当没事发生。", animal: "企鹅" },
+            { text: "越想越气，甚至想爬起来把卫生打扫了。", animal: "熊" }
+        ]},
+        { q: "在你看来，最可怕的情绪是？", options: [
+            { text: "孤独，身边没有人陪。", animal: "狼" },
+            { text: "被困住，失去自由。", animal: "蝴蝶" },
+            { text: "失控，事情超出自己的掌控。", animal: "狐狸" },
+            { text: "麻烦，讨厌任何多余的节外生枝。", animal: "水母" }
+        ]},
+        { q: "你最受不了自己身上的哪一点？", options: [
+            { text: "总是太心软，太容易应激。", animal: "刺猬" },
+            { text: "总是太敏感，容易受惊内耗。", animal: "兔子" },
+            { text: "总是太跳脱，缺乏定性。", animal: "海豚" },
+            { text: "总是太胆小，死要面子活受罪。", animal: "小鹿" }
+        ]},
+        { q: "打游戏或者考试时，你的策略是：", options: [
+            { text: "仔细研究规则，追求极致的最高分。", animal: "猫" },
+            { text: "不走寻常路，专门寻找偏门玩法。", animal: "狗" },
+            { text: "靠人际配合和沟通合作取胜。", animal: "猪" },
+            { text: "找准对手弱点，一击致命，不废话。", animal: "树懒" }
+        ]},
+        { q: "如果团队里有人疯狂划水，你会：", options: [
+            { text: "直接当众指出，绝不留情面。", animal: "考拉" },
+            { text: "默默把活全干了，但心里已经把TA拉黑。", animal: "仓鼠" },
+            { text: "敢怒不敢言，自己偷偷哭。", animal: "天鹅" },
+            { text: "用高情商的方式，四两拨千斤地把活推回给TA。", animal: "猫头鹰" }
+        ]},
+        { q: "面对一个能赚大钱但风险极高的机会，你会：", options: [
+            { text: "干了，风险越大收益越大。", animal: "乌鸦" },
+            { text: "理智分析，算一下成功概率再决定。", animal: "蛇" },
+            { text: "看看别人怎么选，稳妥跟风。", animal: "企鹅" },
+            { text: "算了，太折腾了，还是待着舒服。", animal: "熊" }
+        ]},
+        { q: "如果要你做一件你完全没做过的事，你会：", options: [
+            { text: "极度兴奋，立刻开始摸索尝试。", animal: "狼" },
+            { text: "先看别人怎么做，模仿学习，快速适应。", animal: "蝴蝶" },
+            { text: "极度抗拒，怕做不好，想退缩逃避。", animal: "狐狸" },
+            { text: "先列个详细的计划书，把所有可能想清楚。", animal: "水母" }
+        ]},
+        { q: "别人踩了你的雷区，你会怎么做？", options: [
+            { text: "瞬间爆炸，直接把雷区炸平。", animal: "刺猬" },
+            { text: "暗暗记仇，找机会报复回去。", animal: "兔子" },
+            { text: "默默在心里疯狂扣分，扣完直接离开。", animal: "海豚" },
+            { text: "忍不住阴阳怪气地嘲讽几句。", animal: "小鹿" }
+        ]},
+        { q: "别人夸你的时候，你心里在想什么？", options: [
+            { text: "表面谦虚，心里狂喜：“多夸点，我爱听！”", animal: "猫" },
+            { text: "理智分析：“无事献殷勤，必有妖。”", animal: "狗" },
+            { text: "极度害羞，觉得不好意思：“没有啦。”", animal: "猪" },
+            { text: "表面微笑，心里高冷：“算你有眼光。”", animal: "树懒" }
+        ]},
+        { q: "如果你陷入了深深的内耗，你会怎么走出来？", options: [
+            { text: "靠理智把逻辑盘清楚，自我开导。", animal: "考拉" },
+            { text: "极度渴望有人能抱抱我，需要别人的陪伴。", animal: "仓鼠" },
+            { text: "去研究点奇奇怪怪的东西，转移注意力。", animal: "天鹅" },
+            { text: "什么也不干，等时间冲淡一切。", animal: "猫头鹰" }
+        ]},
+        { q: "在亲密关系里，你绝对不能容忍的是：", options: [
+            { text: "对方冷暴力，不给我任何回应。", animal: "乌鸦" },
+            { text: "对方不给我留私人空间，过度干涉。", animal: "蛇" },
+            { text: "对方跟其他人走得太近，哪怕只是暧昧。", animal: "企鹅" },
+            { text: "对方破坏了我的规矩，打乱了我的计划。", animal: "熊" }
+        ]},
+        { q: "突然下起暴雨，你被困在便利店，你会：", options: [
+            { text: "觉得挺有意思，顺便买点好吃的，既来之则安之。", animal: "狼" },
+            { text: "疯狂看天气预报，计算雨什么时候停，非常焦躁。", animal: "蝴蝶" },
+            { text: "觉得无所谓，靠在椅子上睡一觉。", animal: "狐狸" },
+            { text: "跟旁边同样被困的陌生人搭话，一起吐槽天气。", animal: "水母" }
+        ]},
+        { q: "如果明天就是世界末日，今晚你会做什么？", options: [
+            { text: "疯狂打电话，和所有爱的人告别。", animal: "刺猬" },
+            { text: "像往常一样，该吃吃该睡睡，保持稳定。", animal: "兔子" },
+            { text: "一个人躲起来，看最后一场电影。", animal: "海豚" },
+            { text: "穿上最贵的衣服，去大街上狂欢或发疯。", animal: "小鹿" }
+        ]}
+    ];
+
+    const dimensions = ["能量充电", "社交面具", "应激防御", "情绪内核", "行事逻辑", "隐藏反差"];
+    
+    // 维度的具体文案解释
+    const dimDesc = {
+        "能量充电": { high: "⚡ 你的能量来源于极度专注的自我空间，回血很慢，但一旦充满就会极其高效。", mid: "⚡ 你懂得如何平衡消耗与补充，在人群和自我之间能找到不错的平衡点。", low: "⚡ 你的能量可能多来源于外界刺激或他人，难以忍受长时间的绝对孤独。" },
+        "社交面具": { high: "🎭 你非常懂得察言观色，在不同的人面前能完美切换面具，社交技巧高超。", mid: "🎭 你拥有自己的社交底线，不圆滑也不尖锐，能维持体面的人际关系。", low: "🎭 你极度真实，不喜欢伪装，面具对你来说太沉重，你更愿意直来直去。" },
+        "应激防御": { high: "🛡️ 你的防御机制非常强。遇到冲突，你会本能地开启反击或重度逃避来保护自己。", mid: "🛡️ 你有理智的防御机制，面对冲突能勉强保持冷静，但依然会感到内耗。", low: "🛡️ 你内心充满安全感，面对冒犯或危机往往比较佛系，很难有事能真正伤到你。" },
+        "情绪内核": { high: "💧 你的情绪感知力极高，内核波涛汹涌，共情能力一流，但也容易陷入emo。", mid: "💧 你有正常的喜怒哀乐，能感知他人的痛苦，但大部分时候情绪相对稳定。", low: "💧 你的情绪非常稳定甚至有点钝感，很少有大喜大悲，是个极佳的倾听者。" },
+        "行事逻辑": { high: "🧠 你的行事逻辑极具策略性，深思熟虑，注重目标和效率，极少拍脑门做决定。", mid: "🧠 你在感性与理性间游走，做事有自己的节奏，偶尔会冲动，但大方向不偏。", low: "🧠 你做事全凭直觉和心情，讨厌计划被打乱，更愿意享受当下的随机性。" },
+        "隐藏反差": { high: "🎭 你拥有极强的反差感。你在人前展现的，往往与你真实的内心世界截然不同。", mid: "🎭 你在熟悉的人面前会稍微卸下伪装，你的反差感并没有那么大。", low: "🎭 表里如一就是你的代名词，你所见即是你，真诚得没有一丝伪装。" }
+    };
+
+    // ================= 交互逻辑 =================
+    let currentQIndex = 0;
+    let userAnswers = new Array(questions.length).fill(null); 
+    let radarChartInstance = null;
+    let autoJumpTimer = null;
+
+    window.onload = () => {
+        const grid = document.getElementById('animalGrid');
+        const emojis = ["🐱", "🐶", "🐰", "🐷", "🐹", "🦊", "🐍", "🐺", "🐻", "🐬", "🪼", "🐧", "🦉", "🦢", "🐦‍⬛", "🦋", "🦥", "🦔", "🐨", "🦌"];
+        emojis.forEach(e => {
+            const box = document.createElement('div');
+            box.className = 'animal-box';
+            box.innerHTML = `<span>${e}</span>`;
+            grid.appendChild(box);
+        });
+    };
+
+    function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => {
+            p.classList.remove('active');
+            p.style.display = 'none'; 
+        });
+        const target = document.getElementById(pageId);
+        target.style.display = (pageId === 'startPage') ? 'flex' : 'block'; 
+        target.classList.add('active');
+        window.scrollTo(0, 0); 
+    }
+
+    function startTest() {
+        currentQIndex = 0;
+        userAnswers = new Array(questions.length).fill(null);
+        switchPage('testPage');
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const qData = questions[currentQIndex];
+        document.getElementById('qNum').innerText = `第 ${currentQIndex + 1} / ${questions.length} 题`;
+        document.getElementById('progressBar').style.width = `${((currentQIndex) / questions.length) * 100}%`;
+        document.getElementById('qText').innerText = qData.q;
+        
+        const optionsList = document.getElementById('optionsList');
+        optionsList.innerHTML = '';
+        
+        qData.options.forEach((opt) => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            if(userAnswers[currentQIndex] && userAnswers[currentQIndex].text === opt.text) {
+                div.classList.add('selected');
+            }
+            div.innerText = opt.text;
+            div.onclick = () => selectOption(opt, div);
+            optionsList.appendChild(div);
+        });
+    }
+
+    function selectOption(opt, element) {
+        if(autoJumpTimer) clearTimeout(autoJumpTimer);
+        userAnswers[currentQIndex] = opt;
+        
+        document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+
+        autoJumpTimer = setTimeout(() => {
+            if (currentQIndex < questions.length - 1) {
+                currentQIndex++;
+                renderQuestion();
+            } else {
+                document.getElementById('progressBar').style.width = '100%';
+                setTimeout(calculateResult, 300);
+            }
+        }, 350);
+    }
+
+    function prevQuestion() {
+        if (currentQIndex > 0) {
+            if(autoJumpTimer) clearTimeout(autoJumpTimer);
+            currentQIndex--;
+            renderQuestion();
+        }
+    }
+
+    function nextQuestion() {
+        if(autoJumpTimer) clearTimeout(autoJumpTimer);
+        if (!userAnswers[currentQIndex]) {
+            alert("请先选择一个答案哦~");
+            return;
+        }
+
+        if (currentQIndex < questions.length - 1) {
+            currentQIndex++;
+            renderQuestion();
+        } else {
+            document.getElementById('progressBar').style.width = '100%';
+            calculateResult();
+        }
+    }
+
+    function calculateResult() {
+        let animalCounts = {};
+
+        userAnswers.forEach(ans => {
+            if(!ans) return;
+            animalCounts[ans.animal] = (animalCounts[ans.animal] || 0) + 1;
+        });
+
+        let sortedAnimals = Object.keys(animalCounts).sort((a, b) => animalCounts[b] - animalCounts[a]);
+        let mainAnimal = sortedAnimals[0] || "猫";
+        
+        // 将动物的专属雷达数组保存到历史记录
+        saveToHistory(mainAnimal);
+        
+        // 渲染视图
+        renderResultView(mainAnimal);
+        switchPage('resultPage');
+    }
+
+    function renderResultView(mainAnimal) {
+        const dbData = animalsDB[mainAnimal];
+        const randomTop = Math.floor(Math.random() * 15) + 1;
+        
+        // 获取该动物的专属维度数据
+        const animalRadarData = dbData.radar; 
+
+        document.getElementById('rEmoji').innerText = dbData.emoji;
+        document.getElementById('rName').innerText = mainAnimal;
+        document.getElementById('rBadge').innerText = `你是 TOP ${randomTop}% 的${mainAnimal}塑`;
+        document.getElementById('rQuote').innerText = dbData.quote;
+        document.getElementById('rTitle').innerText = dbData.title;
+        document.getElementById('rTag').innerText = dbData.tag;
+        document.getElementById('rDetail').innerText = dbData.desc;
+        document.getElementById('rWork').innerText = dbData.work;
+        document.getElementById('rLove').innerText = dbData.love;
+
+        // 直接传入该动物的雷达数据
+        drawRadarChart(animalRadarData);
+        renderDimensionList(animalRadarData);
+    }
+
+    function drawRadarChart(radarData) {
+        let chartDom = document.getElementById('radarChart');
+        if (radarChartInstance) {
+            radarChartInstance.dispose();
+        }
+        radarChartInstance = echarts.init(chartDom);
+        
+        let option = {
+            radar: {
+                indicator: dimensions.map(d => ({ name: d, max: 6 })),
+                shape: 'polygon', 
+                splitNumber: 5, 
+                radius: '68%', // 放大图表
+                center: ['50%', '50%'], // 居中
+                axisName: {
+                    color: '#333',
+                    fontSize: 14,
+                    fontWeight: 'bold'
+                },
+                splitArea: {
+                    areaStyle: {
+                        color: ['transparent', '#fafafa', 'transparent', '#fafafa', 'transparent']
+                    }
+                },
+                axisLine: { lineStyle: { color: '#ddd' } },
+                splitLine: { lineStyle: { color: '#ddd' } }
+            },
+            series: [{
+                type: 'radar',
+                data: [{
+                    value: radarData,
+                    name: '性格维度',
+                    areaStyle: { color: 'rgba(136, 117, 201, 0.3)' }, 
+                    lineStyle: { color: '#8875c9', width: 3 }, 
+                    itemStyle: { color: '#8875c9', borderColor: '#fff', borderWidth: 2 }
+                }]
+            }]
+        };
+        
+        radarChartInstance.setOption(option);
+        setTimeout(() => { radarChartInstance.resize(); }, 100);
+    }
+
+    function renderDimensionList(radarData) {
+        const list = document.getElementById('dimensionList');
+        list.innerHTML = '';
+
+        dimensions.forEach((dim, index) => {
+            let score = radarData[index];
+            let percent = Math.min((score / 6) * 100, 100);
+            
+            let levelStr = "低";
+            let descStr = dimDesc[dim].low;
+            if (score >= 4) {
+                levelStr = "高";
+                descStr = dimDesc[dim].high;
+            } else if (score >= 2) {
+                levelStr = "中";
+                descStr = dimDesc[dim].mid;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'dim-card';
+            card.innerHTML = `
+                <div class="dim-title">${dim}</div>
+                <div class="dim-score-row">
+                    <span class="dim-score">${score}</span>
+                    <span class="dim-score-total">/6</span>
+                    <span class="dim-level">${levelStr}</span>
+                </div>
+                <div class="bar-bg">
+                    <div class="bar-fill" style="width: ${percent}%;"></div>
+                </div>
+                <div class="dim-desc">${descStr}</div>
+            `;
+            list.appendChild(card);
+        });
+    }
+
+    // ================= 历史记录 =================
+    function saveToHistory(mainAnimal) {
+        let history = JSON.parse(localStorage.getItem('animalTestHistory_v9') || '[]');
+        
+        let newRecord = {
+            animal: mainAnimal,
+            emoji: animalsDB[mainAnimal].emoji,
+            time: new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        };
+        
+        history.unshift(newRecord);
+        if(history.length > 10) history.pop(); 
+        localStorage.setItem('animalTestHistory_v9', JSON.stringify(history));
+    }
+
+    function toggleHistoryModal() {
+        const modal = document.getElementById('historyModal');
+        if (modal.classList.contains('active')) {
+            modal.classList.remove('active');
+        } else {
+            modal.classList.add('active');
+            renderHistory();
+        }
+    }
+
+    function renderHistory() {
+        const list = document.getElementById('historyList');
+        let history = JSON.parse(localStorage.getItem('animalTestHistory_v9') || '[]');
+        
+        if (history.length === 0) {
+            list.innerHTML = `<p style="text-align:center; color:#888; margin: 20px 0;">暂无记录，快去测测吧~</p>`;
+        } else {
+            list.innerHTML = history.map((item, index) => `
+                <div class="history-item" onclick="viewHistoryDetail(${index})">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:24px;">${item.emoji}</span>
+                        <div>
+                            <div class="history-animal">${item.animal}</div>
+                            <div style="font-size:12px; color:#999; margin-top:4px;">${item.time}</div>
+                        </div>
+                    </div>
+                    <div style="color:#8875c9; font-size:14px; font-weight:bold;">查看结果 ></div>
+                </div>
+            `).join('');
+        }
+    }
+
+    function viewHistoryDetail(index) {
+        let history = JSON.parse(localStorage.getItem('animalTestHistory_v9') || '[]');
+        let record = history[index];
+        
+        if (record) {
+            toggleHistoryModal();
+            renderResultView(record.animal);
+            switchPage('resultPage');
+        }
+    }
+</script>
+</body>
+</html>
