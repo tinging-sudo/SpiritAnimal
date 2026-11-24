@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>动物塑测试</title>
+    <title>动物塑人格测试</title>
     <!-- 引入 ECharts -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
         :root {
-            --bg-main: #ffffff;
-            --dot-color: #fce8e8;
-            --text-dark: #333333;
-            --text-gray: #666666;
-            --purple-main: #8875c9;
+            /* 统一紫色系配色 */
+            --bg-main: #f8f7fc;
+            --text-dark: #2c2a33;
+            --text-gray: #7a7a85;
+            --purple-main: #7c69b5;
+            --purple-light: #ebe6f7;
             --purple-bg: #f4f1fb;
+            
+            /* 卡片左边框颜色 */
             --border-yellow: #f2c97d;
             --border-green: #a8d5ba;
             --border-pink: #f5a8a8;
@@ -23,10 +26,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            /* 白底粉色波点背景 */
             background-color: var(--bg-main);
-            background-image: radial-gradient(var(--dot-color) 15%, transparent 16%);
-            background-size: 30px 30px;
             color: var(--text-dark); 
             font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
             display: flex; 
@@ -53,16 +53,16 @@
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 按钮 */
+        /* 通用按钮 */
         .btn { 
             display: block; width: 100%; padding: 16px; border-radius: 30px; 
-            background: var(--text-dark); color: #fff; 
+            background: var(--purple-main); color: #fff; 
             font-size: 16px; font-weight: bold; text-align: center; 
             border: none; cursor: pointer; transition: all 0.3s; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(124, 105, 181, 0.2);
         }
         .btn:active { transform: scale(0.98); }
-        .btn-outline { background: #fff; color: var(--text-dark); border: 2px solid #eee; box-shadow: none;}
+        .btn-outline { background: #fff; color: var(--purple-main); border: 2px solid var(--purple-light); box-shadow: none;}
 
         /* ================= 1. 开始页面 ================= */
         #startPage { display: none; flex-direction: column; align-items: center; padding-top: 40px; }
@@ -71,17 +71,17 @@
         .clock-icon {
             position: absolute; top: 20px; right: 20px;
             width: 44px; height: 44px; border-radius: 50%;
-            background: #fff; border: 1px solid #eee;
+            background: #fff; border: 1px solid var(--purple-light);
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            font-size: 20px;
+            cursor: pointer; z-index: 100; box-shadow: 0 2px 8px rgba(124, 105, 181, 0.1);
+            font-size: 20px; color: var(--purple-main);
         }
 
-        .main-title { font-size: 36px; font-weight: 900; margin: 20px 0 10px; letter-spacing: 2px;}
+        .main-title { font-size: 36px; font-weight: 900; margin: 20px 0 10px; letter-spacing: 2px; color: var(--text-dark);}
         .sub-title { font-size: 16px; color: var(--text-gray); margin-bottom: 30px; letter-spacing: 1px;}
         
         .info-tags { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
-        .tag { background: #fff; color: #666; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+        .tag { background: var(--purple-light); color: var(--purple-main); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold;}
         
         .animal-grid { 
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; 
@@ -90,16 +90,16 @@
         .animal-box {
             background: #fff; border-radius: 20px; aspect-ratio: 1;
             display: flex; justify-content: center; align-items: center;
-            font-size: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            font-size: 40px; box-shadow: 0 4px 12px rgba(124, 105, 181, 0.08);
         }
 
         /* ================= 2. 答题页面 ================= */
         #testPage { padding-top: 30px;}
-        .progress-container { width: 100%; height: 6px; background: #fff; border-radius: 3px; margin-bottom: 30px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);}
+        .progress-container { width: 100%; height: 6px; background: var(--purple-light); border-radius: 3px; margin-bottom: 30px;}
         .progress-bar { width: 0%; height: 100%; background: var(--purple-main); border-radius: 3px; transition: width 0.3s ease; }
         
         .q-num { font-size: 14px; color: var(--purple-main); margin-bottom: 12px; font-weight: bold; letter-spacing: 1px;}
-        .q-text { font-size: 22px; font-weight: 900; margin-bottom: 25px; line-height: 1.5; background: #fff; padding: 24px; border-radius: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.04);}
+        .q-text { font-size: 22px; font-weight: 900; margin-bottom: 25px; line-height: 1.5; background: #fff; padding: 24px; border-radius: 20px; box-shadow: 0 6px 20px rgba(124, 105, 181, 0.05); color: var(--text-dark);}
         
         .option { 
             background: #fff; border: 2px solid transparent; 
@@ -117,7 +117,7 @@
         .big-emoji { font-size: 80px; line-height: 1; margin-bottom: 10px; display: inline-block;}
         .animal-name { font-size: 40px; font-weight: 900; color: var(--purple-main); letter-spacing: 2px; line-height: 1.2;}
         .badge { 
-            display: inline-block; background: #e8e3f7; color: var(--purple-main); 
+            display: inline-block; background: var(--purple-light); color: var(--purple-main); 
             padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; margin-top: 15px;
         }
 
@@ -132,7 +132,6 @@
             line-height: 1.6;
             margin-bottom: 20px;
             font-style: italic;
-            box-shadow: 0 4px 15px rgba(136, 117, 201, 0.1);
         }
 
         .result-card { 
@@ -140,7 +139,7 @@
             padding: 24px; 
             border-radius: 20px; 
             margin-bottom: 20px; 
-            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+            box-shadow: 0 6px 20px rgba(124, 105, 181, 0.05);
             line-height: 1.7;
         }
         .card-border-yellow { border-left: 6px solid var(--border-yellow); }
@@ -152,21 +151,21 @@
         .card-tag { font-size: 14px; color: #666; font-weight: bold; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee;}
         .card-text { font-size: 15px; color: #444; line-height: 1.8; text-align: justify;}
 
-        /* 雷达图 (绝对居中、大幅放大) */
+        /* 雷达图 */
         .radar-wrap { padding: 10px 0; display: flex; justify-content: center; align-items: center;}
         #radarChart { width: 100%; height: 340px; margin: 0 auto; }
 
         /* 维度进度条 */
         .dim-card { 
             background: #fff; padding: 20px 24px; border-radius: 20px; 
-            margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            margin-bottom: 15px; box-shadow: 0 4px 15px rgba(124, 105, 181, 0.05); 
             border-left: 6px solid var(--purple-main);
         }
         .dim-title { font-size: 20px; font-weight: 900; color: var(--purple-main); margin-bottom: 10px;}
         .dim-score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px;}
         .dim-score { font-size: 32px; font-weight: 900; color: #333;}
         .dim-score-total { font-size: 16px; color: #999; font-weight: bold;}
-        .dim-level { background: #f4f1fb; color: var(--purple-main); padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: bold;}
+        .dim-level { background: var(--purple-bg); color: var(--purple-main); padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: bold;}
         
         .bar-bg { width: 100%; height: 10px; background: #f0f0f0; border-radius: 5px; overflow: hidden; margin-bottom: 15px;}
         .bar-fill { height: 100%; background: var(--purple-main); border-radius: 5px; transition: width 1s ease;}
@@ -181,12 +180,12 @@
         .modal-overlay.active { display: flex; }
         .modal-content {
             width: 85%; max-width: 400px; background: #fff; border-radius: 20px; padding: 20px;
-            max-height: 70vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-height: 70vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(124, 105, 181, 0.15);
         }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;}
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
-        .history-item { background: #fafafa; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;}
-        .history-animal { font-weight: bold; font-size: 16px;}
+        .history-item { background: var(--bg-main); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;}
+        .history-animal { font-weight: bold; font-size: 16px; color: var(--text-dark);}
     </style>
 </head>
 <body>
@@ -196,7 +195,7 @@
     <div id="startPage" class="page active">
         <div class="clock-icon" onclick="toggleHistoryModal()">🕒</div>
         
-        <div class="main-title">动物塑测试</div>
+        <div class="main-title">动物塑人格测试</div>
         <div class="sub-title">你的内在，像哪种小动物？</div>
         
         <div class="info-tags">
@@ -219,7 +218,8 @@
         
         <div class="action-btns">
             <button class="btn btn-outline" onclick="prevQuestion()">上一题</button>
-            <button class="btn" onclick="nextQuestion()">下一题</button>
+            <!-- 动态切换文案的按钮 -->
+            <button class="btn" id="nextBtn" onclick="nextQuestion()">下一题</button>
         </div>
     </div>
 
@@ -250,7 +250,6 @@
             <div class="card-text" id="rLove">加载中...</div>
         </div>
 
-        <!-- 雷达图 -->
         <div class="result-card card-border-purple">
             <div class="card-head" style="text-align: center; color: var(--purple-main); font-size: 22px; margin-bottom: 0;">性格维度分析</div>
             <div class="radar-wrap">
@@ -267,7 +266,7 @@
     <div class="modal-overlay" id="historyModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="font-size: 18px; font-weight: bold;">历史测试档案</h3>
+                <h3 style="font-size: 18px; font-weight: bold; color: var(--purple-main);">历史测试档案</h3>
                 <button class="close-btn" onclick="toggleHistoryModal()">×</button>
             </div>
             <div id="historyList"></div>
@@ -277,8 +276,7 @@
 </div>
 
 <script>
-    // 为20种动物赋予极其清晰、差异化的雷达图得分 (范围1-6分)
-    // 维度顺序: [能量充电, 社交面具, 应激防御, 情绪内核, 行事逻辑, 隐藏反差]
+    // 为20种动物赋予专属的雷达图得分 (范围1-6分)
     const animalsDB = {
         "猫": { emoji: "🐱", radar: [6, 2, 5, 4, 3, 6], quote: "“高冷只是保护色，内心其实在疯狂求抱抱。”", title: "表面高冷独立 × 内心极度缺爱", tag: "【属性标签】高边界MAX × 傲娇MAX", desc: "你像猫一样，有着极高的边界感，不喜欢被打扰。表面总是维持着优雅和骄傲，甚至有点傲娇，但在你信任的人面前，你会卸下防备，展露极度粘人的一面。你极度需要私人空间，太黏糊会让你窒息。", work: "表面靠谱好员工，内心只想下班。遇到甩锅，你能优雅且不失礼貌地怼回去。", love: "极度需要私人空间，太黏糊会让你窒息。但一旦认定，就会暗戳戳地吃醋。" },
         "狗": { emoji: "🐶", radar: [2, 6, 2, 6, 4, 3], quote: "“只要你对我好一点点，我就恨不得把全世界都给你。”", title: "表面热情讨好 × 内心内耗敏感", tag: "【属性标签】低边界MAX × 忠诚度MAX", desc: "你像狗一样，是团队里提供极高情绪价值的开心果。你热情、直球，忠诚度极高，甚至有点讨好型人格。你总是习惯性地照顾别人的感受，但这也让你极其容易受委屈，常常在深夜里因为别人的一句话而内耗。", work: "团队里的老好人，谁找你帮忙都答应，讨好型人格发作。但心里会因为别人的一句话内耗半天。", love: "直球战神，恨不得24小时贴贴。提供极高的情绪价值，极度忠诚，但也容易在感情里受伤。" },
@@ -502,7 +500,6 @@
     let currentQIndex = 0;
     let userAnswers = new Array(questions.length).fill(null); 
     let radarChartInstance = null;
-    let autoJumpTimer = null;
 
     window.onload = () => {
         const grid = document.getElementById('animalGrid');
@@ -549,39 +546,33 @@
                 div.classList.add('selected');
             }
             div.innerText = opt.text;
-            div.onclick = () => selectOption(opt, div);
+            // 点击选项，仅记录和高亮，不自动跳转
+            div.onclick = () => {
+                userAnswers[currentQIndex] = opt;
+                document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+                div.classList.add('selected');
+            };
             optionsList.appendChild(div);
         });
-    }
 
-    function selectOption(opt, element) {
-        if(autoJumpTimer) clearTimeout(autoJumpTimer);
-        userAnswers[currentQIndex] = opt;
-        
-        document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
-        element.classList.add('selected');
-
-        autoJumpTimer = setTimeout(() => {
-            if (currentQIndex < questions.length - 1) {
-                currentQIndex++;
-                renderQuestion();
-            } else {
-                document.getElementById('progressBar').style.width = '100%';
-                setTimeout(calculateResult, 300);
-            }
-        }, 350);
+        // 动态修改按钮文案：如果是最后一题，显示“查看结果”
+        const nextBtn = document.getElementById('nextBtn');
+        if (currentQIndex === questions.length - 1) {
+            nextBtn.innerText = "查看结果";
+        } else {
+            nextBtn.innerText = "下一题";
+        }
     }
 
     function prevQuestion() {
         if (currentQIndex > 0) {
-            if(autoJumpTimer) clearTimeout(autoJumpTimer);
             currentQIndex--;
             renderQuestion();
         }
     }
 
     function nextQuestion() {
-        if(autoJumpTimer) clearTimeout(autoJumpTimer);
+        // 校验是否选了答案
         if (!userAnswers[currentQIndex]) {
             alert("请先选择一个答案哦~");
             return;
@@ -591,6 +582,7 @@
             currentQIndex++;
             renderQuestion();
         } else {
+            // 最后一题点击“查看结果”
             document.getElementById('progressBar').style.width = '100%';
             calculateResult();
         }
@@ -607,10 +599,10 @@
         let sortedAnimals = Object.keys(animalCounts).sort((a, b) => animalCounts[b] - animalCounts[a]);
         let mainAnimal = sortedAnimals[0] || "猫";
         
-        // 将动物的专属雷达数组保存到历史记录
+        // 保存到历史记录
         saveToHistory(mainAnimal);
         
-        // 渲染视图
+        // 渲染结果视图
         renderResultView(mainAnimal);
         switchPage('resultPage');
     }
@@ -619,7 +611,6 @@
         const dbData = animalsDB[mainAnimal];
         const randomTop = Math.floor(Math.random() * 15) + 1;
         
-        // 获取该动物的专属维度数据
         const animalRadarData = dbData.radar; 
 
         document.getElementById('rEmoji').innerText = dbData.emoji;
@@ -632,7 +623,6 @@
         document.getElementById('rWork').innerText = dbData.work;
         document.getElementById('rLove').innerText = dbData.love;
 
-        // 直接传入该动物的雷达数据
         drawRadarChart(animalRadarData);
         renderDimensionList(animalRadarData);
     }
@@ -649,8 +639,8 @@
                 indicator: dimensions.map(d => ({ name: d, max: 6 })),
                 shape: 'polygon', 
                 splitNumber: 5, 
-                radius: '68%', // 放大图表
-                center: ['50%', '50%'], // 居中
+                radius: '68%', 
+                center: ['50%', '50%'], 
                 axisName: {
                     color: '#333',
                     fontSize: 14,
@@ -669,9 +659,9 @@
                 data: [{
                     value: radarData,
                     name: '性格维度',
-                    areaStyle: { color: 'rgba(136, 117, 201, 0.3)' }, 
-                    lineStyle: { color: '#8875c9', width: 3 }, 
-                    itemStyle: { color: '#8875c9', borderColor: '#fff', borderWidth: 2 }
+                    areaStyle: { color: 'rgba(124, 105, 181, 0.3)' }, 
+                    lineStyle: { color: '#7c69b5', width: 3 }, 
+                    itemStyle: { color: '#7c69b5', borderColor: '#fff', borderWidth: 2 }
                 }]
             }]
         };
@@ -718,7 +708,7 @@
 
     // ================= 历史记录 =================
     function saveToHistory(mainAnimal) {
-        let history = JSON.parse(localStorage.getItem('animalTestHistory_v9') || '[]');
+        let history = JSON.parse(localStorage.getItem('animalTestHistory_v10') || '[]');
         
         let newRecord = {
             animal: mainAnimal,
@@ -728,7 +718,7 @@
         
         history.unshift(newRecord);
         if(history.length > 10) history.pop(); 
-        localStorage.setItem('animalTestHistory_v9', JSON.stringify(history));
+        localStorage.setItem('animalTestHistory_v10', JSON.stringify(history));
     }
 
     function toggleHistoryModal() {
@@ -743,7 +733,7 @@
 
     function renderHistory() {
         const list = document.getElementById('historyList');
-        let history = JSON.parse(localStorage.getItem('animalTestHistory_v9') || '[]');
+        let history = JSON.parse(localStorage.getItem('animalTestHistory_v10') || '[]');
         
         if (history.length === 0) {
             list.innerHTML = `<p style="text-align:center; color:#888; margin: 20px 0;">暂无记录，快去测测吧~</p>`;
@@ -757,14 +747,14 @@
                             <div style="font-size:12px; color:#999; margin-top:4px;">${item.time}</div>
                         </div>
                     </div>
-                    <div style="color:#8875c9; font-size:14px; font-weight:bold;">查看结果 ></div>
+                    <div style="color:#7c69b5; font-size:14px; font-weight:bold;">查看结果 ></div>
                 </div>
             `).join('');
         }
     }
 
     function viewHistoryDetail(index) {
-        let history = JSON.parse(localStorage.getItem('animalTestHistory_v9') || '[]');
+        let history = JSON.parse(localStorage.getItem('animalTestHistory_v10') || '[]');
         let record = history[index];
         
         if (record) {
